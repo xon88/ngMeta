@@ -32,7 +32,8 @@
 
       //One-time configuration
       var config = {
-        useTitleSuffix: false
+        useTitleSuffix: false,
+        titleSuffixSeparator: ''
       };
 
       function Meta($rootScope) {
@@ -67,8 +68,11 @@
 
           $rootScope.ngMeta.title = angular.isDefined(title) ? title : (defaults.title || '');
           if (config.useTitleSuffix) {
-            $rootScope.ngMeta.title += angular.isDefined(titleSuffix) ? titleSuffix : (defaults.titleSuffix || '');
+            var suffix = angular.isDefined(titleSuffix) ? titleSuffix : (defaults.titleSuffix || '');
+
+            $rootScope.ngMeta.title += (($rootScope.ngMeta.title === '' || suffix === '') ? '' : config.titleSuffixSeparator) + suffix;
           }
+
           return this;
         };
 
@@ -281,6 +285,24 @@
        */
       this.useTitleSuffix = function(bool) {
         config.useTitleSuffix = !!bool;
+        return this;
+      };
+
+      /**
+       * @ngdoc method
+       * @name ngMetaProvider#setTitleSuffixSeparator
+       * @param {string} separator The string to use as a separator between
+       * title and titleSuffix if both are not empty strings.
+       * Defaults to ''.
+       *
+       * @description
+       * Sets the string to be used as a separator between title and titleSuffix
+       * if both are not empty strings.
+       *
+       * @returns {Object} self
+       */
+      this.setTitleSuffixSeparator = function(separator) {
+        config.titleSuffixSeparator = separator;
         return this;
       };
 
