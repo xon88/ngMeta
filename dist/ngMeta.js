@@ -27,9 +27,13 @@
       //Object for storing default tag/values
       var defaults = {};
 
+      //Object for storing the current route's custom meta object
+      var currentRouteMeta = {};
+
       //One-time configuration
       var config = {
-        useTitleSuffix: false
+        useTitleSuffix: false,
+        titleSuffixSeparator: ''
       };
 
       function Meta($rootScope) {
@@ -59,10 +63,16 @@
           if (!$rootScope.ngMeta) {
             throw new Error('Cannot call setTitle when ngMeta is undefined. Did you forget to call ngMeta.init() in the run block? \nRefer: https://github.com/vinaygopinath/ngMeta#getting-started');
           }
-          $rootScope.ngMeta.title = angular.isDefined(title) ? title : defaults.title;
+          currentRouteMeta.title = title;
+          currentRouteMeta.titleSuffix = titleSuffix;
+
+          $rootScope.ngMeta.title = angular.isDefined(title) ? title : (defaults.title || '');
           if (config.useTitleSuffix) {
-            $rootScope.ngMeta.title += angular.isDefined(titleSuffix) ? titleSuffix : defaults.titleSuffix;
+            var suffix = angular.isDefined(titleSuffix) ? titleSuffix : (defaults.titleSuffix || '');
+
+            $rootScope.ngMeta.title += (($rootScope.ngMeta.title === '' || suffix === '') ? '' : config.titleSuffixSeparator) + suffix;
           }
+
           return this;
         };
 
@@ -86,7 +96,37 @@
           if (tag === 'title' || tag === 'titleSuffix') {
             throw new Error('Attempt to set \'' + tag + '\' through \'setTag\': \'title\' and \'titleSuffix\' are reserved tag names. Please use \'ngMeta.setTitle\' instead');
           }
+          currentRouteMeta[tag] = value;
+
           $rootScope.ngMeta[tag] = angular.isDefined(value) ? value : defaults[tag];
+          return this;
+        };
+
+        /**
+         * @ngdoc method
+         * @name ngMeta#setDefaultTag
+         * @description
+         * Sets the default tag for all routes that are missing a custom
+         * `tag` property in their meta objects.
+         *
+         * @example
+         * ngMeta.setDefaultTag('titleSuffix', ' | Tagline of the site');
+         *
+         * @returns {Object} self
+         */
+        var setDefaultTag = function(tag, value) {
+          if (!$rootScope.ngMeta) {
+            throw new Error('Cannot call setDefaultTag when ngMeta is undefined. Did you forget to call ngMeta.init() in the run block? \nRefer: https://github.com/vinaygopinath/ngMeta#getting-started');
+          }
+
+          defaults[tag] = value;
+
+          if (tag === 'title' || tag === 'titleSuffix') {
+            setTitle(currentRouteMeta.title, currentRouteMeta.titleSuffix);
+          } else {
+            setTag(tag, currentRouteMeta[tag]);
+          }
+
           return this;
         };
 
@@ -108,6 +148,8 @@
          */
         var readRouteMeta = function(meta) {
           meta = meta || {};
+
+          currentRouteMeta = angular.copy(meta);
 
           if (meta.disableUpdate) {
             return false;
@@ -165,7 +207,8 @@
         return {
           'init': init,
           'setTitle': setTitle,
-          'setTag': setTag
+          'setTag': setTag,
+          'setDefaultTag': setDefaultTag
         };
       }
 
@@ -242,6 +285,24 @@
        */
       this.useTitleSuffix = function(bool) {
         config.useTitleSuffix = !!bool;
+        return this;
+      };
+
+      /**
+       * @ngdoc method
+       * @name ngMetaProvider#setTitleSuffixSeparator
+       * @param {string} separator The string to use as a separator between
+       * title and titleSuffix if both are not empty strings.
+       * Defaults to ''.
+       *
+       * @description
+       * Sets the string to be used as a separator between title and titleSuffix
+       * if both are not empty strings.
+       *
+       * @returns {Object} self
+       */
+      this.setTitleSuffixSeparator = function(separator) {
+        config.titleSuffixSeparator = separator;
         return this;
       };
 
